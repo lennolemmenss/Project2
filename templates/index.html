@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraper</title>
+    <!-- Add Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg text-center w-full max-w-4xl">
+        <h1 class="text-2xl font-bold mb-4">TCGA Web Scraper</h1>
+        <button
+            id="start-scraper"
+            class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
+        >
+            Start Scraper
+        </button>
+         <!-- Description -->
+        <p class="mt-4 text-gray-600">
+            When clicking on "start scraper", the following steps will be executed:
+            <br>
+            <ul class="list-disc list-inside text-left mt-2 text-gray-600">
+                <li>Download all <strong>IlluminaHiSeq pancan normalized gene files</strong> from the TCGA database.</li>
+                <li>Convert the downloaded files from <code>.gz</code> to <code>.tsv</code> format.</li>
+                <li>Upload the processed files to <strong>MinIO</strong> for storage.</li>
+            </ul>
+        </p>
+        <p id="message" class="mt-4 text-gray-600"></p>
+        <div id="logs" class="mt-4 text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto font-mono">
+            <pre class="text-sm text-gray-700">Logs will appear here...</pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("start-scraper").addEventListener("click", async () => {
+            const button = document.getElementById("start-scraper");
+            const message = document.getElementById("message");
+            const logsDiv = document.getElementById("logs");
+
+            button.disabled = true;
+            button.textContent = "Scraping...";
+            message.textContent = "";
+            logsDiv.innerHTML = "<pre class='text-sm text-gray-700 font-mono'>Logs will appear here...</pre>";
+            
+            try {
+                const response = await fetch("/start-scraper", {
+                    method: "POST",
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    message.textContent = data.message;
+
+                    const eventSource = new EventSource("/logs");
+                    eventSource.onmessage = (event) => {
+                        const logEntry = document.createElement("div");
+                        logEntry.textContent = event.data;
+                        logEntry.classList.add("text-sm", "text-gray-700", "font-mono");
+                        logsDiv.appendChild(logEntry);
+                        logsDiv.scrollTop = logsDiv.scrollHeight;
+                    };
+                } else {
+                    message.textContent = "Failed to start the scraper.";
+                }
+            } catch (error) {
+                message.textContent = "An error occurred.";
+            } finally {
+                button.disabled = false;
+                button.textContent = "Start Scraper";
+            }
+        });
+    </script>
+</body>
+</html>
