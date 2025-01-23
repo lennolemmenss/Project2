@@ -6,29 +6,53 @@
     <title>Web Scraper</title>
     <!-- Add Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Tailwind Configuration for Poppins -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-lg text-center w-full max-w-4xl">
-        <h1 class="text-2xl font-bold mb-4">TCGA Web Scraper</h1>
-        <button
-            id="start-scraper"
-            class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
-        >
-            Start Scraper
-        </button>
-         <!-- Description -->
-        <p class="mt-4 text-gray-600">
-            When clicking on "start scraper", the following steps will be executed:
-            <br>
-            <ul class="list-disc list-inside text-left mt-2 text-gray-600">
-                <li>Download all <strong>IlluminaHiSeq pancan normalized gene files</strong> from the TCGA database.</li>
-                <li>Convert the downloaded files from <code>.gz</code> to <code>.tsv</code> format.</li>
-                <li>Upload the processed files to <strong>MinIO</strong> for storage.</li>
-            </ul>
-        </p>
-        <p id="message" class="mt-4 text-gray-600"></p>
-        <div id="logs" class="mt-4 text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto font-mono">
-            <pre class="text-sm text-gray-700">Logs will appear here...</pre>
+<body class="bg-gray-100">
+    <!-- Fancy Banner -->
+    <div class="bg-gradient-to-r from-blue-500 to-purple-600 py-8 shadow-lg">
+        <div class="max-w-4xl mx-auto px-4">
+            <h1 class="text-4xl font-bold text-white font-poppins">Project 2: TCGA Web Scraper</h1>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-lg text-center w-full max-w-4xl mt-8">
+            <h2 class="text-2xl font-bold mb-4 font-poppins">TCGA Web Scraper</h2>
+            <button
+                id="start-scraper"
+                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300 font-poppins"
+            >
+                Start Scraper
+            </button>
+            <!-- Description -->
+            <p class="mt-4 text-gray-600 font-poppins">
+                When clicking on "start scraper", the following steps will be executed:
+                <br>
+                <ul class="list-disc list-inside text-left mt-2 text-gray-600 font-poppins text-sm">
+                    <li>Download all <strong>IlluminaHiSeq pancan normalized gene files</strong> from the TCGA database.</li>
+                    <li>Convert the downloaded files from <code>.gz</code> to <code>.tsv</code> format.</li>
+                    <li>Upload the processed files to <strong>MinIO</strong> for storage.</li>
+                </ul>
+            </p>
+            <p id="message" class="mt-4 text-gray-600 font-poppins"></p>
+            <div id="logs" class="mt-4 text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto font-mono">
+                <pre class="text-sm text-gray-700">Logs will appear here...</pre>
+            </div>
         </div>
     </div>
 
