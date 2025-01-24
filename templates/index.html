@@ -53,6 +53,23 @@
             <div id="logs" class="mt-4 text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto font-mono">
                 <pre class="text-sm text-gray-700">Logs will appear here...</pre>
             </div>
+
+            <!-- New Section: Uploaded TSV Files -->
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold mb-4 font-poppins">Uploaded TSV Files</h2>
+                <div id="file-list" class="text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto">
+                    <!-- File list will be populated here -->
+                </div>
+                <div class="mt-4">
+                    <input type="file" id="file-upload" class="hidden" accept=".tsv" />
+                    <button
+                        id="upload-button"
+                        class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition duration-300 font-poppins"
+                    >
+                        Upload TSV File
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -94,6 +111,88 @@
                 button.textContent = "Start Scraper";
             }
         });
+
+        // Function to fetch and display the list of uploaded files
+        async function fetchFileList() {
+            const fileListDiv = document.getElementById("file-list");
+            try {
+                const response = await fetch("/list-files");
+                if (response.ok) {
+                    const files = await response.json();
+                    fileListDiv.innerHTML = files.map(file => `
+                        <div class="flex justify-between items-center p-2 border-b border-gray-300">
+                            <span>${file}</span>
+                            <button
+                                onclick="deleteFile('${file}')"
+                                class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition duration-300"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    `).join("");
+                } else {
+                    fileListDiv.innerHTML = "<p class='text-red-500'>Failed to fetch file list.</p>";
+                }
+            } catch (error) {
+                fileListDiv.innerHTML = "<p class='text-red-500'>An error occurred while fetching the file list.</p>";
+            }
+        }
+
+        // Function to delete a file
+        async function deleteFile(fileName) {
+            try {
+                const response = await fetch("/delete-file", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ file_name: fileName }),
+                });
+
+                if (response.ok) {
+                    alert(`File ${fileName} deleted successfully!`);
+                    fetchFileList(); // Refresh the file list
+                } else {
+                    alert(`Failed to delete file ${fileName}.`);
+                }
+            } catch (error) {
+                alert("An error occurred while deleting the file.");
+            }
+        }
+
+        // Function to handle file upload
+        document.getElementById("upload-button").addEventListener("click", () => {
+            document.getElementById("file-upload").click();
+        });
+
+        document.getElementById("file-upload").addEventListener("change", async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append("file", file);  // Ensure key is exactly "file"
+
+                try {
+                    const response = await fetch("/upload-file", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const responseData = await response.json();
+                    if (response.ok) {
+                        alert(responseData.message);
+                        fetchFileList();
+                    } else {
+                        alert(responseData.message || "Upload failed");
+                    }
+                } catch (error) {
+                    console.error("Upload error:", error);
+                    alert("An error occurred while uploading the file.");
+                }
+            }
+        });
+
+        // Fetch the file list when the page loads
+        fetchFileList();
     </script>
 </body>
 </html>
