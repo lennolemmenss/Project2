@@ -70,8 +70,7 @@
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
+
 
     <script>
         document.getElementById("start-scraper").addEventListener("click", async () => {
@@ -166,33 +165,44 @@
         });
 
         document.getElementById("file-upload").addEventListener("change", async (event) => {
+            console.log(event.target.files);
+            console.log("check frontend");
+
             const file = event.target.files[0];
             if (file) {
                 const formData = new FormData();
-                formData.append("file", file);  // Ensure key is exactly "file"
+                formData.append("file", file);  // Ensure the key is "file"
+                console.log(formData);
 
                 try {
                     const response = await fetch("/upload-file", {
                         method: "POST",
-                        body: formData
+                        body: formData,  // No headers needed for FormData
                     });
 
-                    const responseData = await response.json();
                     if (response.ok) {
-                        alert(responseData.message);
-                        fetchFileList();
+                        alert(`File ${file.name} uploaded successfully!`);
+                        fetchFileList();  // Refresh the file list
                     } else {
-                        alert(responseData.message || "Upload failed");
+                        const errorData = await response.json();
+                        console.log(errorData);
+                        alert(`Failed to upload file: ${errorData.message}`);
                     }
                 } catch (error) {
-                    console.error("Upload error:", error);
                     alert("An error occurred while uploading the file.");
                 }
             }
         });
 
+        
+        
         // Fetch the file list when the page loads
         fetchFileList();
+
+        setInterval(() => {
+        fetchFileList();
+        }, 5000);
+
     </script>
 </body>
 </html>

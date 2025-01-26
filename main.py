@@ -6,7 +6,12 @@ from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.response import Stream
 from litestar.datastructures import UploadFile
 from litestar.status_codes import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from minio_utils import ensure_bucket_exists, upload_to_minio, delete_from_minio, minio_client, MINIO_BUCKET_NAME  # Import MinIO utilities and client
+from minio_utils import ensure_bucket_exists, upload_to_minio, delete_from_minio, minio_client, MINIO_BUCKET_NAME
+
+from starlette.requests import Request
+from litestar.exceptions import ValidationException
+
+
 import subprocess
 import threading
 import queue
@@ -14,7 +19,7 @@ import logging
 import asyncio
 import os
 
-# Create a queue to store logs    
+# Create a queue to store logs
 log_queue = queue.Queue()
 
 # Configure logging to add logs to the queue
@@ -33,7 +38,6 @@ class QueueHandler(logging.Handler):
             self.log_queue.put(msg)
         except Exception:
             self.handleError(record)
-
 
 # Ensure the MinIO bucket exists
 ensure_bucket_exists()
@@ -92,39 +96,32 @@ async def sse_logs() -> Stream:
 
 # Route to upload a file to MinIO
 @post("/upload-file")
-async def upload_file(data: dict = None, files: dict = None) -> dict:
+async def upload_file(request: Request) -> dict:
     try:
-        # Check if file is in files or data
-        file = files.get('file') if files else data.get('file')
-        
-        if not file:
-            logger.error("No file received")
-            return {"message": "No file uploaded"}, HTTP_400_BAD_REQUEST
+        form_data = await request.form()
+        file = form_data["file"]  # Match the FormData key "file"
 
-        # Debug logging
-        logger.info(f"Received file: {file.filename}")
-        logger.info(f"Content type: {file.content_type}")
-        
-        # Ensure uploads directory exists
+        # Validate file type
+        if not file.filename.endswith(".tsv"):
+            raise ValidationException("Only .tsv files are allowed.")
+
+        # Save and upload the file
         os.makedirs("uploads", exist_ok=True)
-
-        # Save the uploaded file
         file_path = f"uploads/{file.filename}"
         with open(file_path, "wb") as f:
-            file_content = await file.read()
-            f.write(file_content)
-
-        # Upload to MinIO
+            content = await file.read()
+            f.write(content)
+        
         if upload_to_minio(file_path, file.filename):
             os.remove(file_path)
             return {"message": f"File {file.filename} uploaded successfully!"}
         else:
-            return {"message": f"Failed to upload {file.filename} to MinIO"}, HTTP_400_BAD_REQUEST
+            return {"message": "Upload failed"}, HTTP_400_BAD_REQUEST
 
+    except ValidationException as e:
+        return {"message": str(e)}, HTTP_400_BAD_REQUEST
     except Exception as e:
-        logger.error(f"Upload error: {str(e)}")
-        return {"message": f"Upload failed: {str(e)}"}, HTTP_400_BAD_REQUEST
-
+        return {"message": f"Error: {str(e)}"}, HTTP_400_BAD_REQUEST
 
 # Route to delete a file from MinIO
 @post("/delete-file")
@@ -136,10 +133,11 @@ async def delete_file(data: dict) -> dict:
 
         # Delete the file from MinIO
         if delete_from_minio(file_name):
-            logger.info(f"Deleted {file_name} from MinIO")
+            print(f"Deleted {file_name} from MinIO")
             return {"message": f"File {file_name} deleted successfully!"}
         else:
             return {"message": f"Failed to delete {file_name} from MinIO"}, HTTP_400_BAD_REQUEST
+    
     except Exception as e:
         logger.error(f"Failed to delete file: {str(e)}")
         return {"message": f"Failed to delete file: {str(e)}"}, HTTP_400_BAD_REQUEST
@@ -155,6 +153,7 @@ async def list_files() -> list:
     except Exception as e:
         logger.error(f"Failed to list files: {str(e)}")
         return []
+
 
 # Configure the Litestar app
 app = Litestar(
