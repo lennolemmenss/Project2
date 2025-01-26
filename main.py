@@ -162,4 +162,5 @@ app = Litestar(
         directory=Path("templates"),
         engine=JinjaTemplateEngine,
     ),
+    request_max_body_size=1024 * 1024 * 1024  # 1GB upload limit
 )
