@@ -1,0 +1,12 @@
+litestar
+uvicorn
+minio
+python-dotenv
+jinja2
+aiofiles
+requests
+gzip
+selenium
+pymongo
+certifi
+starlette
