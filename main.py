@@ -6,11 +6,12 @@ from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.response import Stream
 from litestar.datastructures import UploadFile
 from litestar.status_codes import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from minio_utils import ensure_bucket_exists, upload_to_minio, delete_from_minio, minio_client, MINIO_BUCKET_NAME
+from minio_utils import ensure_bucket_exists, upload_to_minio, delete_from_minio, download_from_minio, minio_client, MINIO_BUCKET_NAME
+from data_processor import process_tsv
+from db import insert_patient_data
 
 from starlette.requests import Request
-from litestar.exceptions import ValidationException
-
+from litestar.exceptions import ValidationException, NotFoundException
 
 import subprocess
 import threading
@@ -50,28 +51,20 @@ async def home() -> Template:
 # Route to start the web scraper
 @post("/start-scraper")
 async def start_scraper() -> dict:
-    # Create a queue for logs if it doesn't exist
     if 'log_queue' not in globals():
         global log_queue
         log_queue = queue.Queue()
 
     def run_scraper():
-        # Configure logging to use the queue handler
         queue_handler = QueueHandler(log_queue)
-        logger = logging.getLogger()  # Root logger
+        logger = logging.getLogger()
         logger.setLevel(logging.INFO)
-        
-        # Remove any existing handlers to prevent duplicate logging
         logger.handlers.clear()
-        
-        # Add the queue handler
         logger.addHandler(queue_handler)
         
-        # Import and run the scraper
         import webscraper
         webscraper.scrape_tcga_data()
 
-    # Run the scraper in a separate thread
     thread = threading.Thread(target=run_scraper)
     thread.start()
 
@@ -99,13 +92,11 @@ async def sse_logs() -> Stream:
 async def upload_file(request: Request) -> dict:
     try:
         form_data = await request.form()
-        file = form_data["file"]  # Match the FormData key "file"
+        file = form_data["file"]
 
-        # Validate file type
         if not file.filename.endswith(".tsv"):
             raise ValidationException("Only .tsv files are allowed.")
 
-        # Save and upload the file
         os.makedirs("uploads", exist_ok=True)
         file_path = f"uploads/{file.filename}"
         with open(file_path, "wb") as f:
@@ -113,8 +104,16 @@ async def upload_file(request: Request) -> dict:
             f.write(content)
         
         if upload_to_minio(file_path, file.filename):
+            # Process and store in MongoDB
+            temp_path = f"temp_{file.filename}"
+            if download_from_minio(file.filename, temp_path):
+                patients = process_tsv(temp_path)
+                for patient in patients:
+                    insert_patient_data(patient)
+                os.remove(temp_path)
+            
             os.remove(file_path)
-            return {"message": f"File {file.filename} uploaded successfully!"}
+            return {"message": f"File {file.filename} uploaded and processed!"}
         else:
             return {"message": "Upload failed"}, HTTP_400_BAD_REQUEST
 
@@ -131,17 +130,14 @@ async def delete_file(data: dict) -> dict:
         if not file_name:
             return {"message": "File name is required"}, HTTP_400_BAD_REQUEST
 
-        # Delete the file from MinIO
         if delete_from_minio(file_name):
-            print(f"Deleted {file_name} from MinIO")
             return {"message": f"File {file_name} deleted successfully!"}
         else:
-            return {"message": f"Failed to delete {file_name} from MinIO"}, HTTP_400_BAD_REQUEST
+            return {"message": f"Failed to delete {file_name}"}, HTTP_400_BAD_REQUEST
     
     except Exception as e:
         logger.error(f"Failed to delete file: {str(e)}")
         return {"message": f"Failed to delete file: {str(e)}"}, HTTP_400_BAD_REQUEST
-
 
 # Route to list files in the MinIO bucket
 @get("/list-files")
@@ -154,13 +150,49 @@ async def list_files() -> list:
         logger.error(f"Failed to list files: {str(e)}")
         return []
 
+# MongoDB Data Endpoints
+@get("/patients")
+async def list_patients() -> list:
+    from db import patients_collection
+    patients = list(patients_collection.find({}, {"_id": 0}))
+    return patients
+
+@get("/patients/{cancer_cohort:str}")
+async def get_patients_by_cohort(cancer_cohort: str) -> list:
+    from db import patients_collection
+    patients = list(patients_collection.find(
+        {"cancer_cohort": cancer_cohort}, 
+        {"_id": 0}
+    ))
+    return patients
+
+@get("/patient/{patient_id:str}")
+async def get_patient(patient_id: str) -> dict:
+    from db import patients_collection
+    patient = patients_collection.find_one(
+        {"patient_id": patient_id},
+        {"_id": 0}
+    )
+    if not patient:
+        raise NotFoundException("Patient not found")
+    return patient
 
 # Configure the Litestar app
 app = Litestar(
-    route_handlers=[home, start_scraper, sse_logs, upload_file, delete_file, list_files],
+    route_handlers=[
+        home, 
+        start_scraper, 
+        sse_logs, 
+        upload_file, 
+        delete_file, 
+        list_files,
+        list_patients,
+        get_patients_by_cohort,
+        get_patient
+    ],
     template_config=TemplateConfig(
         directory=Path("templates"),
         engine=JinjaTemplateEngine,
     ),
-    request_max_body_size=1024 * 1024 * 1024  # 1GB upload limit
+    request_max_body_size=1024 * 1024 * 1024
 )

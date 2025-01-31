@@ -47,3 +47,17 @@ def delete_from_minio(object_name):
     except Exception as e:
         logger.error(f"Failed to delete {object_name} from MinIO: {str(e)}")
         return False
+
+# Download file from MinIO
+def download_from_minio(object_name, file_path):
+    try:
+        minio_client.fget_object(
+            MINIO_BUCKET_NAME,
+            object_name,
+            file_path
+        )
+        logger.info(f"Downloaded {object_name} from MinIO to {file_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to download {object_name}: {str(e)}")
+        return False
