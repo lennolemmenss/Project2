@@ -1,11 +1,12 @@
 from minio import Minio
+import os
 import logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # MinIO configuration
-MINIO_ENDPOINT = "localhost:9000"  # MinIO server address
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000") # MinIO server address
 MINIO_ACCESS_KEY = "minioadmin"    # MinIO access key
 MINIO_SECRET_KEY = "minioadmin"    # MinIO secret key
 MINIO_BUCKET_NAME = "gene-data"    # MinIO bucket name

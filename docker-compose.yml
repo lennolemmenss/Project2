@@ -1,17 +1,29 @@
 version: '3.8'
 
 services:
+  app:
+    platform: linux/amd64  # Force amd64 architecture
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - MONGO_URI=mongodb+srv://lenno:lenno@cluster0.p5luf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+    depends_on:
+      - minio
+
   minio:
     image: quay.io/minio/minio
-    container_name: minio
     ports:
-      - "9000:9000"  # MinIO API port
-      - "9001:9001"  # MinIO console port
+      - "9000:9000"
+      - "9001:9001"
     volumes:
-      - minio_data:/data  # Persistent storage for MinIO
+      - minio_data:/data
     environment:
-      MINIO_ROOT_USER: minioadmin  # Default username
-      MINIO_ROOT_PASSWORD: minioadmin  # Default password
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
 
 volumes:

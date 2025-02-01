@@ -2,11 +2,12 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import certifi
 import logging
+import os
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-uri = "mongodb+srv://lenno:lenno@cluster0.p5luf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = os.getenv("MONGO_URI", "mongodb+srv://lenno:lenno@cluster0.p5luf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
 try:
     client = MongoClient(uri, tlsCAFile=certifi.where(), server_api=ServerApi('1'))
