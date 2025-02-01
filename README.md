@@ -52,8 +52,8 @@ The project includes a web interface built with Litestar (a Python web framework
 
 ### 2. Clone the Repository
 ```bash
-git clone https://github.com/your-repo/tcga-web-scraper.git
-cd tcga-web-scraper
+git clone https://github.com/lennolemmenss/Project2.git
+cd  Project2 
 ```
 
 ### 4. Run with Docker
