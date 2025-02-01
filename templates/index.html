@@ -76,6 +76,8 @@
         <!-- Patient Data Viewer Section -->
         <div class="bg-white p-8 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4">Patient Data Viewer</h2>
+            <p class="text-sm text-gray-600">Refresh if not appear</p>
+            <br>
             <div class="mb-6 flex gap-4 items-end">
                 <div class="flex-1 max-w-xs">
                     <label class="block text-sm font-medium mb-2">Select Cancer Cohort</label>
@@ -92,13 +94,40 @@
                         class="w-full p-2 border rounded-lg"
                     >
                 </div>
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium mb-2">Clinical Stage Filter</label>
+                    <select id="stage-filter" class="w-full p-2 border rounded-lg">
+                        <option value="">All Stages</option>
+                    </select>
+                </div>
             </div>
-            
+        </div> 
+
+            <!-- Clinical Data Summary -->
+            <div id="clinical-summary" class="mb-6 grid grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <h3 class="font-semibold text-blue-700">Total Patients</h3>
+                    <p id="total-patients" class="text-2xl font-bold text-blue-900">-</p>
+                </div>
+                <div class="p-4 bg-green-50 rounded-lg">
+                    <h3 class="font-semibold text-green-700">Survival Rate</h3>
+                    <p id="survival-rate" class="text-2xl font-bold text-green-900">-</p>
+                </div>
+                <div class="p-4 bg-purple-50 rounded-lg">
+                    <h3 class="font-semibold text-purple-700">Disease Specific Survival</h3>
+                    <p id="dss-rate" class="text-2xl font-bold text-purple-900">-</p>
+                </div>
+            </div>
+
             <div id="patient-table-container" class="overflow-auto max-h-96 border rounded-lg">        
                 <table id="patient-table" class="w-full border-collapse hidden">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="p-2 border text-left">Patient ID</th>
+                            <th class="p-2 border text-left sticky top-0 bg-gray-100">Patient ID</th>
+                            <th class="p-2 border text-left sticky top-0 bg-gray-100">Clinical Stage</th>
+                            <th class="p-2 border text-left sticky top-0 bg-gray-100">OS</th>
+                            <th class="p-2 border text-left sticky top-0 bg-gray-100">DSS</th>
+                            <th class="p-2 border text-left sticky top-0 bg-gray-100">Cancer Cohort</th>
                             <!-- Gene columns will be added dynamically -->
                         </tr>
                     </thead>
@@ -111,6 +140,21 @@
                 </div>
                 <div id="patient-empty" class="text-center py-8 text-gray-500 hidden">
                     No patients found for this cohort
+                </div>
+            </div>
+        </div>
+    
+          <!-- Clinical Data Visualization Section -->
+        <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg mt-8">
+            <h2 class="text-2xl font-bold mb-4">Clinical Data Analysis</h2>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">Survival by Clinical Stage</h3>
+                    <div id="survival-by-stage-chart" class="h-64"></div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2">DSS Distribution</h3>
+                    <div id="dss-distribution-chart" class="h-64"></div>
                 </div>
             </div>
         </div>
@@ -135,27 +179,24 @@
     </div>
 
         
-
     <script>
+        // Web Scraper Functionality
         document.getElementById("start-scraper").addEventListener("click", async () => {
             const button = document.getElementById("start-scraper");
             const message = document.getElementById("message");
             const logsDiv = document.getElementById("logs");
-
+    
             button.disabled = true;
             button.textContent = "Scraping...";
             message.textContent = "";
             logsDiv.innerHTML = "<pre class='text-sm text-gray-700 font-mono'>Logs will appear here...</pre>";
-            
+    
             try {
-                const response = await fetch("/start-scraper", {
-                    method: "POST",
-                });
-
+                const response = await fetch("/start-scraper", { method: "POST" });
                 if (response.ok) {
                     const data = await response.json();
                     message.textContent = data.message;
-
+    
                     const eventSource = new EventSource("/logs");
                     eventSource.onmessage = (event) => {
                         const logEntry = document.createElement("div");
@@ -174,8 +215,8 @@
                 button.textContent = "Start Scraper";
             }
         });
-
-        // Function to fetch and display the list of uploaded files
+    
+        // File List and Upload Functionality
         async function fetchFileList() {
             const fileListDiv = document.getElementById("file-list");
             try {
@@ -200,21 +241,17 @@
                 fileListDiv.innerHTML = "<p class='text-red-500'>An error occurred while fetching the file list.</p>";
             }
         }
-
-        // Function to delete a file
+    
         async function deleteFile(fileName) {
             try {
                 const response = await fetch("/delete-file", {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ file_name: fileName }),
                 });
-
                 if (response.ok) {
                     alert(`File ${fileName} deleted successfully!`);
-                    fetchFileList(); // Refresh the file list
+                    fetchFileList();
                 } else {
                     alert(`Failed to delete file ${fileName}.`);
                 }
@@ -222,34 +259,23 @@
                 alert("An error occurred while deleting the file.");
             }
         }
-
-        // Function to handle file upload
+    
         document.getElementById("upload-button").addEventListener("click", () => {
             document.getElementById("file-upload").click();
         });
-
+    
         document.getElementById("file-upload").addEventListener("change", async (event) => {
-            console.log(event.target.files);
-            console.log("check frontend");
-
             const file = event.target.files[0];
             if (file) {
                 const formData = new FormData();
-                formData.append("file", file);  // Ensure the key is "file"
-                console.log(formData);
-
+                formData.append("file", file);
                 try {
-                    const response = await fetch("/upload-file", {
-                        method: "POST",
-                        body: formData,  // No headers needed for FormData
-                    });
-
+                    const response = await fetch("/upload-file", { method: "POST", body: formData });
                     if (response.ok) {
                         alert(`File ${file.name} uploaded successfully!`);
-                        fetchFileList();  // Refresh the file list
+                        fetchFileList();
                     } else {
                         const errorData = await response.json();
-                        console.log(errorData);
                         alert(`Failed to upload file: ${errorData.message}`);
                     }
                 } catch (error) {
@@ -257,7 +283,10 @@
                 }
             }
         });
-
+    
+        // Patient Data Viewer Functionality
+        let allPatients = [];
+    
         async function initializeCohortSelect() {
             const select = document.getElementById('cohort-select');
             try {
@@ -265,180 +294,128 @@
                 if (response.ok) {
                     const data = await response.json();
                     const uniqueCohorts = [...new Set(data.map(p => p.cancer_cohort))].sort();
-                    
                     select.innerHTML = '<option value="">Choose a cohort</option>' +
-                        uniqueCohorts.map(cohort => 
-                            `<option value="${cohort}">${cohort}</option>`
-                        ).join('');
+                        uniqueCohorts.map(cohort => `<option value="${cohort}">${cohort}</option>`).join('');
                 }
             } catch (error) {
                 console.error('Error fetching cohorts:', error);
             }
         }
+    
+        function filterAndDisplayPatients() {
+        const filterValue = document.getElementById('patient-filter').value.toLowerCase();
+        const selectedStage = document.getElementById('stage-filter').value;
 
-        async function fetchAndDisplayPatients(cohort) {
-            const tableContainer = document.getElementById('patient-table-container');
-            const table = document.getElementById('patient-table');
-            const loading = document.getElementById('patient-loading');
-            const empty = document.getElementById('patient-empty');
-            
-            table.classList.add('hidden');
-            empty.classList.add('hidden');
-            loading.classList.remove('hidden');
-            
-            try {
-                const response = await fetch(`/patients/${encodeURIComponent(cohort)}`);
-                if (response.ok) {
-                    const patients = await response.json();
-                    
-                    if (patients.length === 0) {
-                        loading.classList.add('hidden');
-                        empty.classList.remove('hidden');
-                        return;
-                    }
-                    
-                    // Get gene columns (excluding patient_id and cancer_cohort)
-                    const geneColumns = Object.keys(patients[0])
-                        .filter(key => !['patient_id', 'cancer_cohort'].includes(key));
-                    
-                    // Update header
-                    const headerRow = table.querySelector('thead tr');
-                    headerRow.innerHTML = `
-                        <th class="p-2 border text-left">Patient ID</th>
-                        ${geneColumns.map(gene => 
-                            `<th class="p-2 border text-left">${gene}</th>`
-                        ).join('')}
-                    `;
-                    
-                    // Update body
-                    const tbody = table.querySelector('tbody');
-                    tbody.innerHTML = patients.map((patient, index) => `
-                        <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
-                            <td class="p-2 border font-medium">${patient.patient_id}</td>
-                            ${geneColumns.map(gene => 
-                                `<td class="p-2 border">${
-                                    typeof patient[gene] === 'number' 
-                                        ? patient[gene].toFixed(2) 
-                                        : patient[gene]
-                                }</td>`
-                            ).join('')}
-                        </tr>
-                    `).join('');
-                    
-                    loading.classList.add('hidden');
-                    table.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error fetching patients:', error);
-                loading.classList.add('hidden');
-                empty.classList.remove('hidden');
-            }
-        }
-
-        // Initialize cohort select when page loads
-        initializeCohortSelect();
-
-        // Add event listener for cohort selection
-        document.getElementById('cohort-select').addEventListener('change', (e) => {
-            const selectedCohort = e.target.value;
-            if (selectedCohort) {
-                fetchAndDisplayPatients(selectedCohort);
-            } else {
-                document.getElementById('patient-table').classList.add('hidden');
-                document.getElementById('patient-empty').classList.add('hidden');
-            }
+        const filteredPatients = allPatients.filter(patient => {
+            const matchesID = patient.patient_id.toLowerCase().includes(filterValue);
+            const matchesStage = selectedStage === "" || patient.clinical_stage === selectedStage;
+            return matchesID && matchesStage;
         });
 
+        updatePatientTable(filteredPatients);
+        }
         
-
-        // Patient Data Viewer functionality
-        let allPatients = []; // Store all patients for filtering
-
-        async function initializeCohortSelect() {
-            const select = document.getElementById('cohort-select');
-            try {
-                const response = await fetch('/patients');
-                if (response.ok) {
-                    const data = await response.json();
-                    const uniqueCohorts = [...new Set(data.map(p => p.cancer_cohort))].sort();
-                    
-                    select.innerHTML = '<option value="">Choose a cohort</option>' +
-                        uniqueCohorts.map(cohort => 
-                            `<option value="${cohort}">${cohort}</option>`
-                        ).join('');
-                }
-            } catch (error) {
-                console.error('Error fetching cohorts:', error);
-            }
-        }
-
-        function filterAndDisplayPatients() {
-            const filterValue = document.getElementById('patient-filter').value.toLowerCase();
-            const filteredPatients = allPatients.filter(patient => 
-                patient.patient_id.toLowerCase().includes(filterValue)
-            );
-            updatePatientTable(filteredPatients);
-        }
-
         function updatePatientTable(patients) {
             const table = document.getElementById('patient-table');
             const empty = document.getElementById('patient-empty');
-            
+    
             if (patients.length === 0) {
                 table.classList.add('hidden');
                 empty.classList.remove('hidden');
                 return;
             }
-            
-            // Get gene columns (excluding patient_id and cancer_cohort)
+    
+            const clinicalColumns = ['clinical_stage', 'OS', 'DSS'];
             const geneColumns = Object.keys(patients[0])
-                .filter(key => !['patient_id', 'cancer_cohort'].includes(key));
-            
-            // Update header
+                .filter(key => !['patient_id', 'cancer_cohort', ...clinicalColumns].includes(key));
+    
             const headerRow = table.querySelector('thead tr');
             headerRow.innerHTML = `
-                <th class="p-2 border text-left">Patient ID</th>
-                ${geneColumns.map(gene => 
-                    `<th class="p-2 border text-left">${gene}</th>`
-                ).join('')}
+                <th class="p-2 border text-left sticky top-0 bg-gray-100">Patient ID</th>
+                ${clinicalColumns.map(col => `<th class="p-2 border text-left sticky top-0 bg-gray-100">${col}</th>`).join('')}
+                <th class="p-2 border text-left sticky top-0 bg-gray-100">Cancer Cohort</th>
+                ${geneColumns.map(gene => `<th class="p-2 border text-left sticky top-0 bg-gray-100">${gene}</th>`).join('')}
             `;
-            
-            // Update body
+    
             const tbody = table.querySelector('tbody');
             tbody.innerHTML = patients.map((patient, index) => `
                 <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
                     <td class="p-2 border font-medium">${patient.patient_id}</td>
-                    ${geneColumns.map(gene => 
-                        `<td class="p-2 border">${
-                            typeof patient[gene] === 'number' 
-                                ? patient[gene].toFixed(2) 
-                                : patient[gene]
-                        }</td>`
-                    ).join('')}
+                    ${clinicalColumns.map(col => `<td class="p-2 border">${formatClinicalData(col, patient[col])}</td>`).join('')}
+                    <td class="p-2 border">${patient.cancer_cohort}</td>
+                    ${geneColumns.map(gene => `
+                        <td class="p-2 border">${
+                            typeof patient[gene] === 'number' ? patient[gene].toFixed(2) : patient[gene]
+                        }</td>
+                    `).join('')}
                 </tr>
             `).join('');
-            
+    
             empty.classList.add('hidden');
             table.classList.remove('hidden');
+    
+            updateClinicalSummary(patients);
+            updateClinicalCharts(patients);
+            updateStageFilter(patients);
         }
+    
+        function formatClinicalData(column, value) {
+            if (value === null || value === undefined) return 'N/A';
+            switch (column) {
+                case 'OS':
+                case 'DSS':
+                    return value === 1 ? 'Yes' : 'No';
+                case 'clinical_stage':
+                    return value || 'Unknown';
+                default:
+                    return value;
+            }
+        }
+    
+        function updateClinicalSummary(patients) {
+            const totalPatients = patients.length;
+            const survivingPatients = patients.filter(p => p.OS === 1).length;
+            const dssPatients = patients.filter(p => p.DSS === 1).length;
+    
+            document.getElementById('total-patients').textContent = totalPatients;
+            document.getElementById('survival-rate').textContent = `${((survivingPatients / totalPatients) * 100).toFixed(1)}%`;
+            document.getElementById('dss-rate').textContent = `${((dssPatients / totalPatients) * 100).toFixed(1)}%`;
+        }
+    
+        function updateStageFilter(patients) {
+            const stageFilter = document.getElementById('stage-filter');
+            const currentSelection = stageFilter.value; // Save the currently selected stage
 
+            const stages = [...new Set(patients.map(p => p.clinical_stage).filter(Boolean))].sort();
+            stageFilter.innerHTML = '<option value="">All Stages</option>' +
+                stages.map(stage => `<option value="${stage}">${stage}</option>`).join('');
+
+            // Restore previous selection if still available
+            if (stages.includes(currentSelection)) {
+                stageFilter.value = currentSelection;
+            } else {
+                stageFilter.value = ""; // Default to "All Stages"
+            }
+        }
+    
         async function fetchAndDisplayPatients(cohort) {
             const table = document.getElementById('patient-table');
             const loading = document.getElementById('patient-loading');
             const empty = document.getElementById('patient-empty');
             const patientFilter = document.getElementById('patient-filter');
-            
+    
             table.classList.add('hidden');
             empty.classList.add('hidden');
             loading.classList.remove('hidden');
-            patientFilter.value = ''; // Clear filter when changing cohort
-            
+            patientFilter.value = '';
+    
             try {
                 const response = await fetch(`/patients/${encodeURIComponent(cohort)}`);
                 if (response.ok) {
-                    allPatients = await response.json(); // Store all patients
+                    allPatients = await response.json();
                     loading.classList.add('hidden');
-                    filterAndDisplayPatients(); // Initial display
+                    filterAndDisplayPatients();
+                    populateGeneSelect();
                 }
             } catch (error) {
                 console.error('Error fetching patients:', error);
@@ -446,11 +423,81 @@
                 empty.classList.remove('hidden');
             }
         }
-
-        // Initialize cohort select when page loads
-        initializeCohortSelect();
-
-        // Add event listeners
+    
+        function populateGeneSelect() {
+            const geneSelect = document.getElementById("gene-select");
+            if (!allPatients.length) return;
+    
+            const geneColumns = Object.keys(allPatients[0]).filter(key => !['patient_id', 'cancer_cohort'].includes(key));
+            geneSelect.innerHTML = '<option value="">Choose a gene</option>' +
+                geneColumns.map(gene => `<option value="${gene}">${gene}</option>`).join('');
+        }
+    
+        function updateGraph() {
+            const selectedGene = document.getElementById("gene-select").value;
+            if (!selectedGene) return;
+    
+            const filteredPatients = allPatients.filter(patient => patient[selectedGene] !== undefined);
+            const patientIDs = filteredPatients.map(patient => patient.patient_id);
+            const geneValues = filteredPatients.map(patient => patient[selectedGene]);
+    
+            const trace = {
+                x: patientIDs,
+                y: geneValues,
+                type: "bar",
+                marker: { color: "#4F46E5" },
+            };
+    
+            const layout = {
+                title: `Gene Expression for ${selectedGene}`,
+                xaxis: { title: "Patient ID", tickangle: -45 },
+                yaxis: { title: "Expression Level" },
+            };
+    
+            Plotly.newPlot("graph", [trace], layout);
+        }
+    
+        function updateClinicalCharts(patients) {
+            const stageData = {};
+            patients.forEach(patient => {
+                const stage = patient.clinical_stage || 'Unknown';
+                if (!stageData[stage]) {
+                    stageData[stage] = { total: 0, survived: 0 };
+                }
+                stageData[stage].total++;
+                if (patient.OS === 1) stageData[stage].survived++;
+            });
+    
+            const survivalTrace = {
+                x: Object.keys(stageData),
+                y: Object.values(stageData).map(d => (d.survived / d.total) * 100),
+                type: 'bar',
+                name: 'Survival Rate',
+                marker: { color: '#4F46E5' }
+            };
+    
+            Plotly.newPlot('survival-by-stage-chart', [survivalTrace], {
+                title: 'Survival Rate by Clinical Stage',
+                yaxis: { title: 'Survival Rate (%)' },
+                margin: { t: 30 }
+            });
+    
+            const dssTrace = {
+                values: [
+                    patients.filter(p => p.DSS === 1).length,
+                    patients.filter(p => p.DSS === 0).length
+                ],
+                labels: ['Survived Disease', 'Did Not Survive Disease'],
+                type: 'pie',
+                marker: { colors: ['#4F46E5', '#EF4444'] }
+            };
+    
+            Plotly.newPlot('dss-distribution-chart', [dssTrace], {
+                margin: { t: 30 }
+            });
+        }
+    
+        // Event Listeners
         document.getElementById('cohort-select').addEventListener('change', (e) => {
             const selectedCohort = e.target.value;
             if (selectedCohort) {
@@ -462,88 +509,34 @@
                 allPatients = [];
             }
         });
-
-        // Add event listener for patient ID filter
-        document.getElementById('patient-filter').addEventListener('input', (e) => {
+    
+        document.getElementById('patient-filter').addEventListener('input', () => {
             filterAndDisplayPatients();
         });
-                        
-                
-        
-        // Fetch the file list when the page loads
+    
+        document.getElementById('stage-filter').addEventListener('change', (e) => {
+            const selectedStage = e.target.value;
+            const filteredPatients = selectedStage
+                ? allPatients.filter(p => p.clinical_stage === selectedStage)
+                : allPatients;
+            updatePatientTable(filteredPatients);
+        });
+    
+        document.getElementById("gene-select").addEventListener("change", updateGraph);
+    
+        // Initialization
         fetchFileList();
+        initializeCohortSelect();
+
 
         setInterval(() => {
         fetchFileList();
         }, 5000);
 
     </script>
-
+    
     <!-- Include Plotly.js -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script>
-    async function updateGraph() {
-        const selectedGene = document.getElementById("gene-select").value;
-        if (!selectedGene) return;
-
-        const filteredPatients = allPatients.filter(patient => patient[selectedGene] !== undefined);
-        const patientIDs = filteredPatients.map(patient => patient.patient_id);
-        const geneValues = filteredPatients.map(patient => patient[selectedGene]);
-
-        const trace = {
-            x: patientIDs,
-            y: geneValues,
-            type: "bar",
-            marker: { color: "#4F46E5" },
-        };
-
-        const layout = {
-            title: `Gene Expression for ${selectedGene}`,
-            xaxis: { title: "Patient ID", tickangle: -45 },
-            yaxis: { title: "Expression Level" },
-        };
-
-        Plotly.newPlot("graph", [trace], layout);
-    }
-
-    function populateGeneSelect() {
-        const geneSelect = document.getElementById("gene-select");
-        if (!allPatients.length) return;
-
-        const geneColumns = Object.keys(allPatients[0]).filter(key => !['patient_id', 'cancer_cohort'].includes(key));
-        geneSelect.innerHTML = '<option value="">Choose a gene</option>' + 
-            geneColumns.map(gene => `<option value="${gene}">${gene}</option>`).join('');
-    }
-
-    document.getElementById("gene-select").addEventListener("change", updateGraph);
-
-    // Modify fetchAndDisplayPatients to call populateGeneSelect()
-    async function fetchAndDisplayPatients(cohort) {
-        const table = document.getElementById('patient-table');
-        const loading = document.getElementById('patient-loading');
-        const empty = document.getElementById('patient-empty');
-        const patientFilter = document.getElementById('patient-filter');
-        
-        table.classList.add('hidden');
-        empty.classList.add('hidden');
-        loading.classList.remove('hidden');
-        patientFilter.value = ''; 
-        
-        try {
-            const response = await fetch(`/patients/${encodeURIComponent(cohort)}`);
-            if (response.ok) {
-                allPatients = await response.json();
-                loading.classList.add('hidden');
-                filterAndDisplayPatients();
-                populateGeneSelect(); // Populate gene dropdown
-            }
-        } catch (error) {
-            console.error('Error fetching patients:', error);
-            loading.classList.add('hidden');
-            empty.classList.remove('hidden');
-        }
-    }
-</script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 </body>
 </html>
