@@ -83,17 +83,19 @@ View **Survival Rate by Clinical Stage** and **DSS Distribution** in the Clinica
 
 ## File Structure
 ```plaintext
-tcga-web-scraper/
-├── app/
-│   ├── main.py              # Litestar application and routes
-│   ├── data_processor.py    # Process .tsv files and extract gene data
-│   ├── db.py                # MongoDB connection and patient data insertion
-│   ├── minio_utils.py       # MinIO utility functions
-│   ├── webscraper.py        # Selenium-based web scraper
-├── templates/
-│   ├── index.html           # Frontend HTML template
-├── docker-compose.yml       # Docker Compose configuration
-├── requirements.txt         # Python dependencies
+├── data_processor.py
+├── db.py
+├── docker-compose.yml
+├── dockerfile
+├── main.py
+├── minio_utils.py
+├── requirements.txt
+├── static
+│   └── TCGA_clinical_survival_data.tsv
+├── templates
+│   └── index.html
+├── uploads
+└── webscraper.py
 ```
 
 ## API Endpoints
