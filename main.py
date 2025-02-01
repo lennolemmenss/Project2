@@ -150,7 +150,6 @@ async def list_files() -> list:
         logger.error(f"Failed to list files: {str(e)}")
         return []
 
-# MongoDB Data Endpoints
 @get("/patients")
 async def list_patients() -> list:
     from db import patients_collection
@@ -177,6 +176,7 @@ async def get_patient(patient_id: str) -> dict:
         raise NotFoundException("Patient not found")
     return patient
 
+    
 # Configure the Litestar app
 app = Litestar(
     route_handlers=[

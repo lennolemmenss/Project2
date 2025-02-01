@@ -21,56 +21,120 @@
         };
     </script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 font-poppins">
     <!-- Fancy Banner -->
     <div class="bg-gradient-to-r from-blue-500 to-purple-600 py-8 shadow-lg">
         <div class="max-w-4xl mx-auto px-4">
-            <h1 class="text-4xl font-bold text-white font-poppins">Project 2: TCGA Web Scraper</h1>
+            <h1 class="text-4xl font-bold text-white">Project 2: TCGA Web Scraper</h1>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-lg shadow-lg text-center w-full max-w-4xl mt-8">
-            <h2 class="text-2xl font-bold mb-4 font-poppins">TCGA Web Scraper</h2>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Web Scraper Section -->
+        <div class="bg-white p-8 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-bold mb-4">TCGA Web Scraper</h2>
             <button
                 id="start-scraper"
-                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300 font-poppins"
+                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
             >
                 Start Scraper
             </button>
             <!-- Description -->
-            <p class="mt-4 text-gray-600 font-poppins">
+            <p class="mt-4 text-gray-600">
                 When clicking on "start scraper", the following steps will be executed:
                 <br>
-                <ul class="list-disc list-inside text-left mt-2 text-gray-600 font-poppins text-sm">
+                <ul class="list-disc list-inside text-left mt-2 text-gray-600 text-sm">
                     <li>Download all <strong>IlluminaHiSeq pancan normalized gene files</strong> from the TCGA database.</li>
                     <li>Convert the downloaded files from <code>.gz</code> to <code>.tsv</code> format.</li>
                     <li>Upload the processed files to <strong>MinIO</strong> for storage.</li>
                 </ul>
             </p>
-            <p id="message" class="mt-4 text-gray-600 font-poppins"></p>
+            <p id="message" class="mt-4 text-gray-600"></p>
             <div id="logs" class="mt-4 text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto font-mono">
                 <pre class="text-sm text-gray-700">Logs will appear here...</pre>
             </div>
+        </div>
 
-            <!-- New Section: Uploaded TSV Files -->
-            <div class="mt-8">
-                <h2 class="text-2xl font-bold mb-4 font-poppins">Uploaded TSV Files</h2>
-                <div id="file-list" class="text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto">
-                    <!-- File list will be populated here -->
+        <!-- Uploaded TSV Files Section -->
+        <div class="bg-white p-8 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-bold mb-4">Uploaded TSV Files</h2>
+            <div id="file-list" class="text-left bg-gray-200 p-4 rounded-lg max-h-96 overflow-y-auto">
+                <!-- File list will be populated here -->
+            </div>
+            <div class="mt-4">
+                <input type="file" id="file-upload" class="hidden" accept=".tsv" />
+                <button
+                    id="upload-button"
+                    class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition duration-300"
+                >
+                    Upload TSV File
+                </button>
+            </div>
+        </div>
+
+        <!-- Patient Data Viewer Section -->
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Patient Data Viewer</h2>
+            <div class="mb-6 flex gap-4 items-end">
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium mb-2">Select Cancer Cohort</label>
+                    <select id="cohort-select" class="w-full p-2 border rounded-lg">
+                        <option value="">Choose a cohort</option>
+                    </select>
                 </div>
-                <div class="mt-4">
-                    <input type="file" id="file-upload" class="hidden" accept=".tsv" />
-                    <button
-                        id="upload-button"
-                        class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition duration-300 font-poppins"
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium mb-2">Filter Patient ID</label>
+                    <input 
+                        type="text" 
+                        id="patient-filter" 
+                        placeholder="Type to filter..." 
+                        class="w-full p-2 border rounded-lg"
                     >
-                        Upload TSV File
-                    </button>
                 </div>
             </div>
+            
+            <div id="patient-table-container" class="overflow-auto max-h-96 border rounded-lg">        
+                <table id="patient-table" class="w-full border-collapse hidden">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 border text-left">Patient ID</th>
+                            <!-- Gene columns will be added dynamically -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Patient data -->
+                    </tbody>
+                </table>
+                <div id="patient-loading" class="text-center py-8 hidden">
+                    Loading patient data...
+                </div>
+                <div id="patient-empty" class="text-center py-8 text-gray-500 hidden">
+                    No patients found for this cohort
+                </div>
+            </div>
+        </div>
 
+        <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg mt-8">
+            <h2 class="text-2xl font-bold mb-4">Gene Expression Visualization</h2>
+            <div class="flex gap-4 items-end">
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium mb-2">Select Gene</label>
+                    <select id="gene-select" class="w-full p-2 border rounded-lg">
+                        <option value="">Choose a gene</option>
+                    </select>
+                </div>
+            </div>
+            <div id="graph-container" class="mt-6 border rounded-lg p-4 bg-gray-100">
+                <div id="graph"></div>
+            </div>
+        </div>
+        
+
+        
+    </div>
+
+        
 
     <script>
         document.getElementById("start-scraper").addEventListener("click", async () => {
@@ -194,7 +258,217 @@
             }
         });
 
+        async function initializeCohortSelect() {
+            const select = document.getElementById('cohort-select');
+            try {
+                const response = await fetch('/patients');
+                if (response.ok) {
+                    const data = await response.json();
+                    const uniqueCohorts = [...new Set(data.map(p => p.cancer_cohort))].sort();
+                    
+                    select.innerHTML = '<option value="">Choose a cohort</option>' +
+                        uniqueCohorts.map(cohort => 
+                            `<option value="${cohort}">${cohort}</option>`
+                        ).join('');
+                }
+            } catch (error) {
+                console.error('Error fetching cohorts:', error);
+            }
+        }
+
+        async function fetchAndDisplayPatients(cohort) {
+            const tableContainer = document.getElementById('patient-table-container');
+            const table = document.getElementById('patient-table');
+            const loading = document.getElementById('patient-loading');
+            const empty = document.getElementById('patient-empty');
+            
+            table.classList.add('hidden');
+            empty.classList.add('hidden');
+            loading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`/patients/${encodeURIComponent(cohort)}`);
+                if (response.ok) {
+                    const patients = await response.json();
+                    
+                    if (patients.length === 0) {
+                        loading.classList.add('hidden');
+                        empty.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    // Get gene columns (excluding patient_id and cancer_cohort)
+                    const geneColumns = Object.keys(patients[0])
+                        .filter(key => !['patient_id', 'cancer_cohort'].includes(key));
+                    
+                    // Update header
+                    const headerRow = table.querySelector('thead tr');
+                    headerRow.innerHTML = `
+                        <th class="p-2 border text-left">Patient ID</th>
+                        ${geneColumns.map(gene => 
+                            `<th class="p-2 border text-left">${gene}</th>`
+                        ).join('')}
+                    `;
+                    
+                    // Update body
+                    const tbody = table.querySelector('tbody');
+                    tbody.innerHTML = patients.map((patient, index) => `
+                        <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                            <td class="p-2 border font-medium">${patient.patient_id}</td>
+                            ${geneColumns.map(gene => 
+                                `<td class="p-2 border">${
+                                    typeof patient[gene] === 'number' 
+                                        ? patient[gene].toFixed(2) 
+                                        : patient[gene]
+                                }</td>`
+                            ).join('')}
+                        </tr>
+                    `).join('');
+                    
+                    loading.classList.add('hidden');
+                    table.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error fetching patients:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+            }
+        }
+
+        // Initialize cohort select when page loads
+        initializeCohortSelect();
+
+        // Add event listener for cohort selection
+        document.getElementById('cohort-select').addEventListener('change', (e) => {
+            const selectedCohort = e.target.value;
+            if (selectedCohort) {
+                fetchAndDisplayPatients(selectedCohort);
+            } else {
+                document.getElementById('patient-table').classList.add('hidden');
+                document.getElementById('patient-empty').classList.add('hidden');
+            }
+        });
+
         
+
+        // Patient Data Viewer functionality
+        let allPatients = []; // Store all patients for filtering
+
+        async function initializeCohortSelect() {
+            const select = document.getElementById('cohort-select');
+            try {
+                const response = await fetch('/patients');
+                if (response.ok) {
+                    const data = await response.json();
+                    const uniqueCohorts = [...new Set(data.map(p => p.cancer_cohort))].sort();
+                    
+                    select.innerHTML = '<option value="">Choose a cohort</option>' +
+                        uniqueCohorts.map(cohort => 
+                            `<option value="${cohort}">${cohort}</option>`
+                        ).join('');
+                }
+            } catch (error) {
+                console.error('Error fetching cohorts:', error);
+            }
+        }
+
+        function filterAndDisplayPatients() {
+            const filterValue = document.getElementById('patient-filter').value.toLowerCase();
+            const filteredPatients = allPatients.filter(patient => 
+                patient.patient_id.toLowerCase().includes(filterValue)
+            );
+            updatePatientTable(filteredPatients);
+        }
+
+        function updatePatientTable(patients) {
+            const table = document.getElementById('patient-table');
+            const empty = document.getElementById('patient-empty');
+            
+            if (patients.length === 0) {
+                table.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+            
+            // Get gene columns (excluding patient_id and cancer_cohort)
+            const geneColumns = Object.keys(patients[0])
+                .filter(key => !['patient_id', 'cancer_cohort'].includes(key));
+            
+            // Update header
+            const headerRow = table.querySelector('thead tr');
+            headerRow.innerHTML = `
+                <th class="p-2 border text-left">Patient ID</th>
+                ${geneColumns.map(gene => 
+                    `<th class="p-2 border text-left">${gene}</th>`
+                ).join('')}
+            `;
+            
+            // Update body
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = patients.map((patient, index) => `
+                <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                    <td class="p-2 border font-medium">${patient.patient_id}</td>
+                    ${geneColumns.map(gene => 
+                        `<td class="p-2 border">${
+                            typeof patient[gene] === 'number' 
+                                ? patient[gene].toFixed(2) 
+                                : patient[gene]
+                        }</td>`
+                    ).join('')}
+                </tr>
+            `).join('');
+            
+            empty.classList.add('hidden');
+            table.classList.remove('hidden');
+        }
+
+        async function fetchAndDisplayPatients(cohort) {
+            const table = document.getElementById('patient-table');
+            const loading = document.getElementById('patient-loading');
+            const empty = document.getElementById('patient-empty');
+            const patientFilter = document.getElementById('patient-filter');
+            
+            table.classList.add('hidden');
+            empty.classList.add('hidden');
+            loading.classList.remove('hidden');
+            patientFilter.value = ''; // Clear filter when changing cohort
+            
+            try {
+                const response = await fetch(`/patients/${encodeURIComponent(cohort)}`);
+                if (response.ok) {
+                    allPatients = await response.json(); // Store all patients
+                    loading.classList.add('hidden');
+                    filterAndDisplayPatients(); // Initial display
+                }
+            } catch (error) {
+                console.error('Error fetching patients:', error);
+                loading.classList.add('hidden');
+                empty.classList.remove('hidden');
+            }
+        }
+
+        // Initialize cohort select when page loads
+        initializeCohortSelect();
+
+        // Add event listeners
+        document.getElementById('cohort-select').addEventListener('change', (e) => {
+            const selectedCohort = e.target.value;
+            if (selectedCohort) {
+                fetchAndDisplayPatients(selectedCohort);
+            } else {
+                document.getElementById('patient-table').classList.add('hidden');
+                document.getElementById('patient-empty').classList.add('hidden');
+                document.getElementById('patient-filter').value = '';
+                allPatients = [];
+            }
+        });
+
+        // Add event listener for patient ID filter
+        document.getElementById('patient-filter').addEventListener('input', (e) => {
+            filterAndDisplayPatients();
+        });
+                        
+                
         
         // Fetch the file list when the page loads
         fetchFileList();
@@ -204,5 +478,72 @@
         }, 5000);
 
     </script>
+
+    <!-- Include Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    async function updateGraph() {
+        const selectedGene = document.getElementById("gene-select").value;
+        if (!selectedGene) return;
+
+        const filteredPatients = allPatients.filter(patient => patient[selectedGene] !== undefined);
+        const patientIDs = filteredPatients.map(patient => patient.patient_id);
+        const geneValues = filteredPatients.map(patient => patient[selectedGene]);
+
+        const trace = {
+            x: patientIDs,
+            y: geneValues,
+            type: "bar",
+            marker: { color: "#4F46E5" },
+        };
+
+        const layout = {
+            title: `Gene Expression for ${selectedGene}`,
+            xaxis: { title: "Patient ID", tickangle: -45 },
+            yaxis: { title: "Expression Level" },
+        };
+
+        Plotly.newPlot("graph", [trace], layout);
+    }
+
+    function populateGeneSelect() {
+        const geneSelect = document.getElementById("gene-select");
+        if (!allPatients.length) return;
+
+        const geneColumns = Object.keys(allPatients[0]).filter(key => !['patient_id', 'cancer_cohort'].includes(key));
+        geneSelect.innerHTML = '<option value="">Choose a gene</option>' + 
+            geneColumns.map(gene => `<option value="${gene}">${gene}</option>`).join('');
+    }
+
+    document.getElementById("gene-select").addEventListener("change", updateGraph);
+
+    // Modify fetchAndDisplayPatients to call populateGeneSelect()
+    async function fetchAndDisplayPatients(cohort) {
+        const table = document.getElementById('patient-table');
+        const loading = document.getElementById('patient-loading');
+        const empty = document.getElementById('patient-empty');
+        const patientFilter = document.getElementById('patient-filter');
+        
+        table.classList.add('hidden');
+        empty.classList.add('hidden');
+        loading.classList.remove('hidden');
+        patientFilter.value = ''; 
+        
+        try {
+            const response = await fetch(`/patients/${encodeURIComponent(cohort)}`);
+            if (response.ok) {
+                allPatients = await response.json();
+                loading.classList.add('hidden');
+                filterAndDisplayPatients();
+                populateGeneSelect(); // Populate gene dropdown
+            }
+        } catch (error) {
+            console.error('Error fetching patients:', error);
+            loading.classList.add('hidden');
+            empty.classList.remove('hidden');
+        }
+    }
+</script>
+
 </body>
 </html>
