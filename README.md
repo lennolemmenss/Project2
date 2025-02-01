@@ -61,8 +61,9 @@ cd tcga-web-scraper
 docker-compose up --build
 ```
 This will start the following services:
-- **app**: The Litestar web application.
-- **minio**: MinIO object storage.
+- **App**: The Litestar web application.
+- **Minio**: MinIO object storage.
+- **Selenium**: Webscraper.
 
 ### 5. Access the Application
 Open your browser and navigate to `http://localhost:8000`.
