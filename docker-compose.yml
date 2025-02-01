@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    platform: linux/amd64  # Force amd64 architecture
+    platform: linux/amd64
     build: .
     ports:
       - "8000:8000"
