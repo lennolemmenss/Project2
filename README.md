@@ -56,11 +56,6 @@ git clone https://github.com/your-repo/tcga-web-scraper.git
 cd tcga-web-scraper
 ```
 
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
 ### 4. Run with Docker
 ```bash
 docker-compose up --build
