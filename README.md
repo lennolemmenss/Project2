@@ -48,13 +48,27 @@ The project includes a web interface built with Litestar (a Python web framework
 ## Setup Instructions
 ### 1. Prerequisites
 - Docker and Docker Compose installed.
-- Python 3.8+ installed.
 
 ### 2. Clone the Repository
 ```bash
 git clone https://github.com/lennolemmenss/Project2.git
 cd  Project2 
 ```
+
+
+### 3. Create a .env File
+Before running the project, you need to create a `.env` file to store your environment variables, such as your MongoDB URI, MinIO endpoint, and Selenium URL.
+
+In the root directory of the project (where the `docker-compose.yml` file is located), create a file named `.env`.
+
+Add the following environment variables to the `.env` file, replacing the values with your actual credentials and URLs:
+
+```env
+MONGO_URI="YOUR_URI"
+```
+
+Save the `.env` file. Docker Compose will automatically use these environment variables when starting the services.
+
 
 ### 4. Run with Docker
 ```bash

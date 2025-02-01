@@ -18,7 +18,7 @@ services:
       - "8000:8000"
     environment:
       - MINIO_ENDPOINT=minio:9000
-      - MONGO_URI=mongodb+srv://lenno:lenno@cluster0.p5luf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      - MONGO_URI=${MONGO_URI}
       - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
     volumes:
       - .:/app
