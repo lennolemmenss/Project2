@@ -68,6 +68,13 @@ This will start the following services:
 ### 5. Access the Application
 Open your browser and navigate to `http://localhost:8000`.
 
+**URL to access Minio:**
+- [Minio Console](http://localhost:9001)
+- [Minio API Endpoint](http://localhost:9000)
+
+**URL to access Selenium:**
+- [Selenium WebDriver](http://localhost:4444/wd/hub)
+
 ## Usage
 ### 1. Start the Scraper
 Click the **Start Scraper** button to begin downloading and processing TCGA data. Logs will appear in the Logs section.
