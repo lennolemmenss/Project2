@@ -56,7 +56,7 @@ cd  Project2
 ```
 
 
-### 3. Create a .env File
+### 3. Change the .env File
 Before running the project, you need to change the `.env` file to store your MongoDB URI.
 
 ```env
