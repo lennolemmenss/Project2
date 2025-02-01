@@ -17,11 +17,16 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
 def setup_driver(): 
-    options = webdriver.ChromeOptions()
+    options = webdriver.FirefoxOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    return webdriver.Chrome(options=options)
+
+    driver = webdriver.Remote(
+        command_executor="http://selenium:4444/wd/hub",
+        options=options
+    )
+    return driver
 
 def download_file(url, destination):
     response = requests.get(url)
