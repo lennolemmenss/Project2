@@ -57,11 +57,7 @@ cd  Project2
 
 
 ### 3. Create a .env File
-Before running the project, you need to create a `.env` file to store your environment variables, such as your MongoDB URI, MinIO endpoint, and Selenium URL.
-
-In the root directory of the project (where the `docker-compose.yml` file is located), create a file named `.env`.
-
-Add the following environment variables to the `.env` file, replacing the values with your actual credentials and URLs:
+Before running the project, you need to change the `.env` file to store your MongoDB URI.
 
 ```env
 MONGO_URI="YOUR_URI"
